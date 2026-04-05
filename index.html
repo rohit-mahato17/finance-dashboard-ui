@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTrack - Finance Dashboard</title>
+    <meta name="description" content="A simple finance dashboard to track income, expenses and transactions">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-wallet"></i> FinTrack</h2>
+        </div>
+        <ul class="nav-links">
+            <li class="active" data-page="dashboard" onclick="navigateTo('dashboard')">
+                <i class="fas fa-home"></i> <span>Dashboard</span>
+            </li>
+            <li data-page="transactions" onclick="navigateTo('transactions')">
+                <i class="fas fa-receipt"></i> <span>Transactions</span>
+            </li>
+            <li data-page="insights" onclick="navigateTo('insights')">
+                <i class="fas fa-lightbulb"></i> <span>Insights</span>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleDarkMode()">
+                <i class="fas fa-moon" id="theme-icon"></i> <span id="theme-text">Dark Mode</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- overlay for mobile sidebar -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+
+        <!-- Top Header Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 id="page-title">Dashboard</h1>
+            </div>
+            <div class="topbar-right">
+                <div class="role-selector">
+                    <label for="role-select">Role:</label>
+                    <select id="role-select" onchange="changeRole(this.value)">
+                        <option value="admin">Admin</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Rohit</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ============ DASHBOARD PAGE ============ -->
+        <section id="dashboard-page" class="page active">
+
+            <!-- summary cards row -->
+            <div class="summary-cards">
+                <div class="card summary-card balance-card">
+                    <div class="card-icon"><i class="fas fa-wallet"></i></div>
+                    <div class="card-info">
+                        <p class="card-label">Total Balance</p>
+                        <h3 class="card-value" id="total-balance">₹0</h3>
+                    </div>
+                </div>
+                <div class="card summary-card income-card">
+                    <div class="card-icon"><i class="fas fa-arrow-up"></i></div>
+                    <div class="card-info">
+                        <p class="card-label">Total Income</p>
+                        <h3 class="card-value" id="total-income">₹0</h3>
+                    </div>
+                </div>
+                <div class="card summary-card expense-card">
+                    <div class="card-icon"><i class="fas fa-arrow-down"></i></div>
+                    <div class="card-info">
+                        <p class="card-label">Total Expenses</p>
+                        <h3 class="card-value" id="total-expenses">₹0</h3>
+                    </div>
+                </div>
+                <div class="card summary-card savings-card">
+                    <div class="card-icon"><i class="fas fa-piggy-bank"></i></div>
+                    <div class="card-info">
+                        <p class="card-label">Savings Rate</p>
+                        <h3 class="card-value" id="savings-rate">0%</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- charts -->
+            <div class="charts-row">
+                <div class="card chart-card">
+                    <h3 class="card-title">Balance Trend</h3>
+                    <canvas id="balance-chart"></canvas>
+                </div>
+                <div class="card chart-card">
+                    <h3 class="card-title">Spending Breakdown</h3>
+                    <canvas id="spending-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- recent transactions -->
+            <div class="card recent-transactions">
+                <div class="card-header-row">
+                    <h3 class="card-title">Recent Transactions</h3>
+                    <a href="#" onclick="navigateTo('transactions'); return false;" class="view-all-link">View All <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-tbody"></tbody>
+                    </table>
+                </div>
+                <div id="recent-empty" class="empty-state" style="display:none;">
+                    <i class="fas fa-inbox"></i>
+                    <p>No transactions yet.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ TRANSACTIONS PAGE ============ -->
+        <section id="transactions-page" class="page">
+
+            <div class="transactions-toolbar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Search transactions..." oninput="applyFilters()">
+                </div>
+                <div class="filter-group">
+                    <select id="category-filter" onchange="applyFilters()">
+                        <option value="all">All Categories</option>
+                        <option value="Food & Dining">Food & Dining</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Bills & Utilities">Bills & Utilities</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Health">Health</option>
+                        <option value="Education">Education</option>
+                        <option value="Salary">Salary</option>
+                        <option value="Freelance">Freelance</option>
+                        <option value="Investment">Investment</option>
+                    </select>
+                    <select id="type-filter" onchange="applyFilters()">
+                        <option value="all">All Types</option>
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                    </select>
+                    <select id="sort-select" onchange="applyFilters()">
+                        <option value="date-desc">Newest First</option>
+                        <option value="date-asc">Oldest First</option>
+                        <option value="amount-desc">High to Low</option>
+                        <option value="amount-asc">Low to High</option>
+                    </select>
+                </div>
+                <div class="toolbar-actions">
+                    <button class="btn btn-outline" onclick="exportCSV()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <button class="btn btn-primary admin-only" id="add-txn-btn" onclick="openAddModal()">
+                        <i class="fas fa-plus"></i> Add Transaction
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="table-wrapper">
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th class="admin-col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-tbody"></tbody>
+                    </table>
+                </div>
+                <div id="no-results" class="empty-state" style="display:none;">
+                    <i class="fas fa-search"></i>
+                    <p>No transactions found matching your filters.</p>
+                </div>
+                <div id="txn-empty" class="empty-state" style="display:none;">
+                    <i class="fas fa-inbox"></i>
+                    <p>No transactions yet. Click "Add Transaction" to get started!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ INSIGHTS PAGE ============ -->
+        <section id="insights-page" class="page">
+
+            <div class="insights-grid">
+                <div class="card insight-card">
+                    <div class="insight-icon" style="color:#e74c3c;"><i class="fas fa-fire"></i></div>
+                    <h3>Top Spending</h3>
+                    <p id="top-category" class="insight-value">-</p>
+                    <p id="top-category-amount" class="insight-sub">₹0</p>
+                </div>
+                <div class="card insight-card">
+                    <div class="insight-icon" style="color:#3498db;"><i class="fas fa-calculator"></i></div>
+                    <h3>Avg Daily Spend</h3>
+                    <p id="avg-spending" class="insight-value">₹0</p>
+                    <p class="insight-sub">per day</p>
+                </div>
+                <div class="card insight-card">
+                    <div class="insight-icon" style="color:#2ecc71;"><i class="fas fa-exchange-alt"></i></div>
+                    <h3>Total Transactions</h3>
+                    <p id="total-txns" class="insight-value">0</p>
+                    <p id="txn-split" class="insight-sub">0 income · 0 expense</p>
+                </div>
+                <div class="card insight-card">
+                    <div class="insight-icon" style="color:#f39c12;"><i class="fas fa-trophy"></i></div>
+                    <h3>Best Month</h3>
+                    <p id="best-month" class="insight-value">-</p>
+                    <p id="best-month-savings" class="insight-sub">highest savings</p>
+                </div>
+            </div>
+
+            <div class="charts-row">
+                <div class="card chart-card">
+                    <h3 class="card-title">Monthly Income vs Expenses</h3>
+                    <canvas id="comparison-chart"></canvas>
+                </div>
+                <div class="card chart-card">
+                    <h3 class="card-title">Category-wise Spending</h3>
+                    <canvas id="category-bar-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="card tips-card">
+                <h3 class="card-title"><i class="fas fa-lightbulb" style="color:#f39c12;"></i> Financial Tips</h3>
+                <ul id="tips-list"></ul>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ===== Add/Edit Transaction Modal ===== -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Transaction</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="transaction-form" onsubmit="saveTransaction(event)">
+                <div class="form-group">
+                    <label for="txn-date">Date</label>
+                    <input type="date" id="txn-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="txn-desc">Description</label>
+                    <input type="text" id="txn-desc" placeholder="e.g. Grocery Shopping" required>
+                </div>
+                <div class="form-group">
+                    <label for="txn-amount">Amount (₹)</label>
+                    <input type="number" id="txn-amount" placeholder="Enter amount" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="txn-category">Category</label>
+                    <select id="txn-category" required>
+                        <option value="">Select Category</option>
+                        <option value="Food & Dining">Food & Dining</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Bills & Utilities">Bills & Utilities</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Health">Health</option>
+                        <option value="Education">Education</option>
+                        <option value="Salary">Salary</option>
+                        <option value="Freelance">Freelance</option>
+                        <option value="Investment">Investment</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="txn-type">Type</label>
+                    <select id="txn-type" required>
+                        <option value="expense">Expense</option>
+                        <option value="income">Income</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
